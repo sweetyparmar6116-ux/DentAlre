@@ -171,7 +171,7 @@ export default function ScanPage() {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval)
-          router.push("/result")
+          router.push("/*")
           return 100
         }
         return prev + 4
