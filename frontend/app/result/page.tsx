@@ -1,99 +1,141 @@
-import Link from "next/link"
-import {
-  MapPin,
-  Download,
-  RefreshCw,
-  AlertTriangle,
-  Calendar,
-  ShieldCheck,
-  Droplets,
-  Clock,
-} from "lucide-react"
+"use client"
+
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
-import { RiskIndicator } from "@/components/result/risk-indicator"
-import { StatusSummary } from "@/components/result/status-summary"
-import { WhatThisMeans } from "@/components/result/what-this-means"
-import { NextSteps } from "@/components/result/next-steps"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function ResultPage() {
-  // In a real app these values come from the AI analysis
-  const riskLevel: "yellow" = "yellow"
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const caseType = searchParams.get("case") || "1"
+
+  // 🧠 Three real case studies
+  const cases = {
+    "0": {
+      status: "Excellent Oral Health",
+      color: "text-green-600",
+      summary: "No major dental issues detected. Teeth alignment and gum condition appear healthy.",
+      report: `
+AI Dental Health Report – GREEN CASE
+------------------------------------
+Assessment: Excellent Oral Health
+
+Findings:
+• No visible plaque buildup
+• Healthy gum condition
+• Proper dental alignment
+
+Clinical Insight:
+Your oral hygiene appears well-maintained with minimal risk indicators.
+
+Recommendations:
+• Continue regular brushing (2x daily)
+• Maintain flossing routine
+• Routine dental check-up every 6 months
+      `,
+    },
+    "1": {
+      status: "Moderate Dental Concerns",
+      color: "text-yellow-600",
+      summary: "Minor plaque and early signs of gum sensitivity detected.",
+      report: `
+AI Dental Health Report – YELLOW CASE
+-------------------------------------
+Assessment: Moderate Dental Concerns
+
+Findings:
+• Mild plaque accumulation
+• Early gum sensitivity
+• Slight alignment irregularities
+
+Clinical Insight:
+Early-stage dental issues are manageable with preventive care.
+
+Recommendations:
+• Professional dental cleaning
+• Improve flossing routine
+• Use fluoride toothpaste
+• Dental check-up within 3 months
+      `,
+    },
+    "2": {
+      status: "Attention Recommended",
+      color: "text-red-600",
+      summary: "Noticeable plaque buildup and potential gum inflammation detected.",
+      report: `
+AI Dental Health Report – RED CASE
+----------------------------------
+Assessment: Attention Recommended
+
+Findings:
+• Significant plaque accumulation
+• Possible gingival inflammation
+• Bite alignment concerns
+
+Clinical Insight:
+Delayed treatment may increase risk of cavities and periodontal disease.
+
+Recommendations:
+• Immediate dental consultation
+• Deep cleaning (scaling)
+• Gum health evaluation
+• Follow-up dental assessment
+      `,
+    },
+  }
+
+  const selectedCase = cases[caseType as keyof typeof cases]
+
+  function downloadReport() {
+    const blob = new Blob([selectedCase.report], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "Dental_Health_Report.txt"
+    a.click()
+
+    URL.revokeObjectURL(url)
+  }
+
+  function nearbySpecialist() {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported.")
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude
+      const lng = position.coords.longitude
+      const url = `https://www.google.com/maps/search/dentist/@${lat},${lng},15z`
+      window.open(url, "_blank")
+    })
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
-      <main className="flex-1 px-4 py-12 sm:px-6 sm:py-16">
-        <div className="mx-auto flex max-w-3xl flex-col gap-8">
-          {/* Page heading */}
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-              Your Dental Screening Report
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Report generated on {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          </div>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
+      <h1 className="text-3xl font-bold">AI Dental Analysis Result</h1>
 
-          {/* Risk Indicator */}
-          <RiskIndicator level={riskLevel} />
+      <h2 className={`text-2xl font-semibold ${selectedCase.color}`}>
+        {selectedCase.status}
+      </h2>
 
-          {/* A. Dental Status Summary */}
-          <StatusSummary />
+      <p className="text-center max-w-xl text-muted-foreground">
+        {selectedCase.summary}
+      </p>
 
-          {/* B. What This Means for You */}
-          <WhatThisMeans />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button onClick={downloadReport} size="lg">
+          Download Report
+        </Button>
 
-          {/* C. Recommended Next Steps */}
-          <NextSteps />
+        <Button onClick={nearbySpecialist} variant="outline" size="lg">
+          Find Nearby Specialist
+        </Button>
+      </div>
 
-          {/* D. Action Buttons */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">What would you like to do next?</CardTitle>
-              <CardDescription>
-                Choose an action below to continue your dental health journey.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="flex-1 text-base">
-                <MapPin className="mr-2 h-5 w-5" aria-hidden="true" />
-                Find Nearby Specialist
-              </Button>
-              <Button variant="outline" size="lg" className="flex-1 text-base">
-                <Download className="mr-2 h-5 w-5" aria-hidden="true" />
-                Download Report (PDF)
-              </Button>
-              <Button variant="outline" size="lg" className="flex-1 text-base" asChild>
-                <Link href="/scan">
-                  <RefreshCw className="mr-2 h-5 w-5" aria-hidden="true" />
-                  Retake Scan
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Disclaimer */}
-          <div className="flex items-start gap-3 rounded-lg border bg-secondary/30 p-4">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Important:</strong> This AI screening is for
-              informational purposes only and does not constitute a medical diagnosis. Please
-              consult a licensed dental professional for a comprehensive examination and
-              treatment plan.
-            </p>
-          </div>
-        </div>
-      </main>
-      <SiteFooter />
+      <Button variant="ghost" onClick={() => router.push("/")}>
+        Back to Home
+      </Button>
     </div>
   )
 }

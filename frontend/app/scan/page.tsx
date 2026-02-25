@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback,useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Upload,
@@ -137,13 +137,22 @@ function DropZone({
 }
 
 export default function ScanPage() {
+ 
   const router = useRouter()
   const [files, setFiles] = useState<Record<string, UploadedFile>>({})
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [progress, setProgress] = useState(0)
 
-  const uploadedCount = Object.keys(files).length
-  const totalRequired = REQUIRED_VIEWS.length
+const uploadedCount = Object.keys(files).length
+const totalRequired = REQUIRED_VIEWS.length
+
+// ✅ Safe redirect AFTER progress completes
+useEffect(() => {
+  if (progress >= 100) {
+    router.push("/result")
+  }
+}, [progress, router])
+  
 
   const handleUpload = useCallback((viewId: string, file: File) => {
     const preview = URL.createObjectURL(file)
@@ -165,19 +174,32 @@ export default function ScanPage() {
   }, [])
 
   function handleAnalyze() {
-    setIsAnalyzing(true)
-    setProgress(0)
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          router.push("/*")
-          return 100
-        }
-        return prev + 4
-      })
-    }, 80)
-  }
+    
+  
+  setIsAnalyzing(true)
+  setProgress(0)
+
+  // Generate random case (0, 1, 2)
+  const caseType = Math.floor(Math.random() * 3)
+
+  let value = 0
+  const interval = setInterval(() => {
+    value += 10
+    setProgress(value)
+
+    if (value >= 100) {
+      clearInterval(interval)
+
+      setTimeout(() => {
+        // Pass case type to result page
+        router.push(`/result?case=${caseType}`)
+      }, 500)
+    }
+  }, 200)
+
+ 
+}
+  
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
